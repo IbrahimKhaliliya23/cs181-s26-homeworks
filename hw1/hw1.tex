@@ -1,10 +1,10 @@
-\documentclass[submit]{../harvardml}
-\usepackage{../common}
+\documentclass[submit]{harvardml}
+\usepackage{common}
 
 \course{CS1810-S26}
 \assignment{Homework \#1}
 \duedate{February 13, 2026 at 11:59 PM}
-
+\usepackage{float}
 \usepackage[OT1]{fontenc}
 \usepackage[colorlinks,citecolor=blue,urlcolor=blue]{hyperref}
 \usepackage{graphicx}
@@ -50,72 +50,7 @@
 \begin{center}
   {\Large Regression}
 \end{center}
-
-\subsection*{Introduction}
-
-This homework is on different three different forms of regression:
-nearest neighbors regression, kernelized regression, and linear
-regression.  We will discuss implementation and examine their
-tradeoffs by implementing them on the same dataset, which consists of
-temperature over the past 800,000 years taken from ice core samples.
-
-The folder \verb|data| contains the data you will use for this
-problem. There are two files:
-\begin{itemize}
-  \item \verb|earth_temperature_sampled_train.csv|
-  \item \verb|earth_temperature_sampled_test.csv|
-\end{itemize}
-
-Each has two columns.  The first column is the age of the ice core
-sample.  The second column is the approximate difference in a year's temperature (K)
-from the average temperature of the 1,000 years preceding it. The temperatures were retrieved from ice cores in
-Antarctica (Jouzel et al. 2007)\footnote{Retrieved from
-  \url{https://www.ncei.noaa.gov/pub/data/paleo/icecore/antarctica/epica_domec/edc3deuttemp2007.txt}
-
-  Jouzel, J., Masson-Delmotte, V., Cattani, O., Dreyfus, G., Falourd,
-  S., Hoffmann, G., … Wolff, E. W. (2007). Orbital and Millennial
-  Antarctic Climate Variability over the Past 800,000 Years.
-  \emph{Science, 317}(5839), 793–796. doi:10.1126/science.1141038}.
-
-The following is a snippet of the data file:
-
-\begin{csv}
-  # Age, Temperature
-  399946,0.51
-  409980,1.57
-\end{csv}
-
-\noindent And this is a visualization of the full dataset:
-\begin{center}
-  \includegraphics[width=.8\textwidth]{img_input/sample_graph}
-\end{center}
-\noindent
-
-
-\textbf{Due to the large magnitude of the years, we will work in terms
-  of thousands of years BCE in these problems.} This is taken care of
-for you in the provided notebook.
-
-
-
-
-
-
-\subsection*{Resources and Submission Instructions}
-
-% The course textbook is not fully updated to the spring 2026 rendition of CS 1810, but if you want to take a look, it may still be helpful to see Sections 2.1-2.7 of the \href{https://github.com/harvard-ml-courses/cs181-textbook/blob/master/Textbook.pdf}{cs181-textbook notes}.
-
-% We also encourage you to first read the
-% \href{http://users.isr.ist.utl.pt/~wurmd/Livros/school/Bishop\%20-\%20Pattern\%20Recognition\%20And\%20Machine\%20Learning\%20-\%20Springer\%20\%202006.pdf}{Bishop textbook}, particularly: Section 2.3 (Properties of Gaussian Distributions), Section 3.1 (Linear Basis Regression), and Section 3.3 (Bayesian Linear Regression). (Note that our notation is slightly different but the underlying mathematics remains the same!).
-
-Please type your solutions after the corresponding problems using this \LaTeX\ template, and start each main problem on a new page.
-
-Please submit the writeup PDF to the Gradescope assignment `HW1'. Remember to assign pages for each question.  \textbf{You must include any plots in your writeup PDF. }. Please submit your \LaTeX file and code files to the Gradescope assignment `HW1 - Supplemental.' The supplemental files will only be checked in special cases, e.g. honor code issues, etc. Your files should be named in the same way as we provide them in the repository, e.g. \texttt{hw1.pdf}, etc.
-
-If you find that you are having trouble with the first couple problems, it may be helpful to refer to Section 0 notes and review some linear algebra and matrix calculus. 
-
-\newpage 
-
+  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Problem 1
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -180,7 +115,133 @@ dictates how quickly the kernel decays).
 \newpage
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item SubProblem 1
+        \begin{enumerate}
+            \item Functions plot for $K=1,3,N-1$.\medskip
+            
+            For $K=1$, the fit indicates the model is predicting the training data almost perfectly, since each prediction is the value of the nearest training point, which means that the model has low bias and high variance. The model might not generalize well to unseen data.\medskip
+
+            As for $K=3$, the fit is smoother than $K=1$ since we're averaging the values of the nearest 3 training points, which slightly reduces variance and increases bias.\medskip
+
+            Lastly, for $K=N-1$, this is the extreme opposite of $K=1$, where fit indicates the model is averaging almost all values of training points, causing every prediction to be the global average of all points. The model has high bias and low variance.
+            {
+            \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.38\textwidth]{p1.1a.png}
+            \end{figure}}
+            \item $K=1$, $mse=$  $1.7406000000000004$
+    $K=3$, $mse=$  $3.8907662222222212$
+                    $K=N-1$, $mse=$ $9.528571442602042$.
+                    Although the model with $K=1$ is theoretically high variance and low bias. From our MSE calculation it appears that the the dataset is relatively low-noise and therefore the model has lowest $mse$.
+        \end{enumerate}
+        \item SubProblem 2 
+        \begin{enumerate}
+            \item Based on the the different 3 fits it appears that $\tau$ controls how broadly are we assigning to nearby points. For $\tau =1$ we can see that the nearest points get most weight and that's why we have a non-smooth fit since each prediction is heavily influenced by the closes training point. As we increase $\tau$ to $50$ More nearby points contribute to the prediction. Lastly we can notice when we increase $\tau$ to $2500$ the fit becomes smother and the model appears to have more bias since many more points recieve similar weight.
+            \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.4\textwidth]{p1.2a.png}
+            \end{figure}
+            \item For each test input $x'_m$ the kernel's predictor is
+            
+            \[
+\hat{y}'_m \;=\;
+\frac{\sum_{n=1}^{N} K_{\tau}(x_n, x'_m)\, y_n}
+{\sum_{n=1}^{N} K_{\tau}(x_n, x'_m)}
+\]
+
+So the $mse$ over test is:
+\[
+\mathrm{MSE}(\tau)
+\;=\;
+\frac{1}{M}\sum_{m=1}^{M}
+\left(
+y'_m
+-
+\frac{\sum_{n=1}^{N} K_{\tau}(x_n, x'_m)\, y_n}
+{\sum_{n=1}^{N} K_{\tau}(x_n, x'_m)}
+\right)^2
+\]
+
+        \item $\tau=1$ : $mse= 1.9472621565209178$
+        \smallskip
+        
+        $\tau=50$ : $mse= 1.858289916961345$ $\rightarrow  $ lowest $mse$
+        \smallskip
+        
+        $\tau=2500$ : $mse = 8.333886806980791$
+
+        This is because because $\tau= 50$ is the best bias-variance tradeoff compared $\tau=1$ (high variance), and $\tau=2500$ (high bias).
+        \smallskip
+
+        choosing $\tau$ based on $\mathcal{D}_\texttt{train}$ rather than $\mathcal{D}_\texttt{test}$ is a bad idea because that would be tuning $\tau$ to do well on the data we already fit on, which increases overfitting. More specifically, training error favors small $\tau$ since it decreases the $mse$ even if that means the model generalizes badly.
+        \item Both kNN and kernel regression store the entire training dataset 
+$\{(x_n, y_n)\}_{n=1}^{N}$. Therefore, the space complexity of both models 
+is $\mathrm{}{O}(N)$. For kNN, making a prediction at a new point $x^*$ requires computing the 
+distance from $x^*$ to all $N$ training points, which takes 
+$\mathrm{O}(N)$ time. Selecting the $k$ nearest neighbors requires either 
+sorting ($\mathrm{O}(N \log N)$)
+($\mathrm{O}(N)$). Thus, the overall prediction time is 
+$\mathrm{O}(N)$ (or $\mathrm{O}(N \log N)$ with  sorting). For kernel regression, making a prediction at $x^*$ requires computing 
+the kernel value $K_\tau(x_n, x^*)$ for all $N$ training points and 
+computing the weighted numerator and denominator sums. This requires 
+$\mathrm{O}(N)$ time. The two models' sizes grows linearly with $N$, and the number of 
+computations required to make a single prediction also grows linearly 
+with $N$.
+
+\item Recall
+\[
+f_\tau(x^*)
+=
+\frac{\sum_{n=1}^{N} 
+\exp\!\left(-\frac{(x_n - x^*)^2}{\tau}\right) y_n}
+{\sum_{n=1}^{N} 
+\exp\!\left(-\frac{(x_n - x^*)^2}{\tau}\right)}.
+\]
+
+Let
+\[
+d_n = (x_n - x^*)^2.
+\]
+
+Then
+\[
+f_\tau(x^*)
+=
+\frac{\sum_{n=1}^{N} e^{-d_n/\tau} y_n}
+{\sum_{n=1}^{N} e^{-d_n/\tau}}.
+\]
+
+As $\tau \to 0$:
+
+- If $d_n > 0$, then $e^{-d_n/\tau} \to 0$.
+- The smallest $d_n$ dominates the sum.
+
+Let
+\[
+n^* = \arg\min_n (x_n - x^*)^2.
+\]
+
+Then the numerator and denominator are dominated by the $n^*$ term:
+
+\[
+\sum_{n=1}^{N} e^{-d_n/\tau} y_n 
+\sim e^{-d_{n^*}/\tau} y_{n^*},
+\]
+\[
+\sum_{n=1}^{N} e^{-d_n/\tau}
+\sim e^{-d_{n^*}/\tau}.
+\]
+
+Therefore,
+\[
+\lim_{\tau \to 0} f_\tau(x^*)
+=
+y_{n^*}.
+\]
+
+        \end{enumerate}
+	\end{enumerate}
 \end{solution}
 
 \newpage
@@ -225,7 +286,141 @@ dictates how quickly the kernel decays).
 \newpage
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item Subproblem 1
+        \smallskip
+
+        Let the squared loss be
+\[
+\mathcal{L}(\mathbf w)=\frac{1}{2}\|\mathbf y-\mathbf X\mathbf w\|_2^2.
+\]
+The fitted vector is $\hat{\mathbf y}=\mathbf X\mathbf w^*$ where
+\[
+\mathbf w^*=(\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top \mathbf y.
+\]
+
+ $\hat{\mathbf y}\in C(\mathbf X)$.
+By definition, $\hat{\mathbf y}=\mathbf X\mathbf w^*$ is a linear combination of the columns of $\mathbf X$,
+so $\hat{\mathbf y}\in C(\mathbf X)$.
+
+ $\mathbf y-\hat{\mathbf y}\perp C(\mathbf X)$.
+Compute the gradient:
+\[
+\nabla_{\mathbf w}\mathcal{L}(\mathbf w)
+= -\mathbf X^\top(\mathbf y-\mathbf X\mathbf w).
+\]
+At the minimizer $\mathbf w^*$ we have $\nabla_{\mathbf w}\mathcal{L}(\mathbf w^*)=0$, hence
+\[
+\mathbf X^\top(\mathbf y-\mathbf X\mathbf w^*)=\mathbf 0
+\quad\Longrightarrow\quad
+\mathbf X^\top(\mathbf y-\hat{\mathbf y})=\mathbf 0.
+\]
+Let $\mathbf v\in C(\mathbf X)$. Then $\mathbf v=\mathbf X\mathbf a$ for some $\mathbf a\in\mathbb R^D$, and
+\[
+\mathbf v^\top(\mathbf y-\hat{\mathbf y})
+=(\mathbf X\mathbf a)^\top(\mathbf y-\hat{\mathbf y})
+=\mathbf a^\top \mathbf X^\top(\mathbf y-\hat{\mathbf y})
+=\mathbf a^\top \mathbf 0
+=0.
+\]
+Thus $(\mathbf y-\hat{\mathbf y})$ is orthogonal to every vector in $C(\mathbf X)$, i.e.
+\[
+\mathbf y-\hat{\mathbf y}\perp C(\mathbf X).
+\]
+
+Since $\hat{\mathbf y}\in C(\mathbf X)$ and $\mathbf y-\hat{\mathbf y}\perp C(\mathbf X)$, $\hat{\mathbf y}$ is
+the orthogonal projection of $\mathbf y$ onto $C(\mathbf X)$.
+
+\item SubProblem 2
+
+\smallskip
+
+Let $\hat{\mathbf y}$ be the orthogonal projection of $\mathbf y$ onto $C(\mathbf X)$, so
+$\hat{\mathbf y}\in C(\mathbf X)$ and $\mathbf r:=\mathbf y-\hat{\mathbf y}\perp C(\mathbf X)$.
+
+Take any $\mathbf v\in C(\mathbf X)$. Then $\mathbf v-\hat{\mathbf y}\in C(\mathbf X)$ as well, hence
+\[
+\mathbf r \perp (\mathbf v-\hat{\mathbf y}).
+\]
+Now decompose the error to $\mathbf v$ as
+\[
+\mathbf y-\mathbf v
+=
+(\mathbf y-\hat{\mathbf y})+(\hat{\mathbf y}-\mathbf v)
+=
+\mathbf r-(\mathbf v-\hat{\mathbf y}).
+\]
+By the Pythagorean theorem (since $\mathbf r \perp (\mathbf v-\hat{\mathbf y})$),
+\[
+\|\mathbf y-\mathbf v\|_2^2
+=
+\|\mathbf r\|_2^2+\|\mathbf v-\hat{\mathbf y}\|_2^2
+\ge
+\|\mathbf r\|_2^2
+=
+\|\mathbf y-\hat{\mathbf y}\|_2^2.
+\]
+Therefore, for every $\mathbf v\in C(\mathbf X)$,
+\[
+\|\mathbf y-\hat{\mathbf y}\|_2^2 \le \|\mathbf y-\mathbf v\|_2^2,
+\]
+so $\hat{\mathbf y}$ minimizes the Euclidean distance from $\mathbf y$ among all vectors in $C(\mathbf X)$.
+
+\item SubProblem 3
+
+Let $\mathbf X\in\mathbb R^{N\times D}$ have full column rank $d$ and define the (hat) projection matrix
+\[
+\mathbf P=\mathbf X(\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top.
+\] 
+
+\textbf{Symmetry.}
+Using $(\mathbf X^\top\mathbf X)^{-1}$ is symmetric,
+\[
+\mathbf P^\top
+=\left(\mathbf X(\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top\right)^\top
+=\mathbf X(\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top
+=\mathbf P.
+\]
+
+\textbf{Idempotence.}
+\[
+\mathbf P^2
+=\mathbf X(\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top
+\mathbf X(\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top
+=\mathbf X(\mathbf X^\top \mathbf X)^{-1}(\mathbf X^\top\mathbf X)(\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top
+=\mathbf X(\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top
+=\mathbf P.
+\]
+
+\textbf{}{Rank.}
+For any $\mathbf a\in\mathbb R^D$,
+\[
+\mathbf P(\mathbf X\mathbf a)=\mathbf X(\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top \mathbf X\mathbf a
+=\mathbf X\mathbf a,
+\]
+so $\mathrm{Im}(\mathbf P)=C(\mathbf X)$. Hence
+\[
+\mathrm{rank}(\mathbf P)=\dim(\mathrm{Im}(\mathbf P))=\dim(C(\mathbf X))=d.
+\]
+
+\textbf{Trace.}
+Since $\mathbf P$ is idempotent ($\mathbf P^2=\mathbf P$), we may use the fact that any idempotent
+matrix satisfies $\mathrm{trace}(\mathbf P)=\mathrm{rank}(\mathbf P)$. Therefore,
+\[
+\mathrm{trace}(\mathbf P)=\mathrm{rank}(\mathbf P)=d.
+\]
+\item SubProblem 4
+
+ U-shaped residual plot means the linear model is missing curvature.
+Geometrically, OLS projects $\mathbf y$ onto the column space $C(\mathbf X)$.
+If $C(\mathbf X)$ only contains linear functions, it cannot
+capture a quadratic trend in the data. The leftover quadratic component stays
+in the residual vector, which is why the residuals show a systematic parabolic
+pattern instead of random scatter. Adding a quadratic basis function ($x^2$) expands the column space to include
+that curved direction. Now the projection can capture the parabola, and the
+residuals become more random around zero because the  structure has
+been explained and conveyed by the model
+	\end{enumerate}
 \end{solution}
 
 \newpage
@@ -282,7 +477,38 @@ dictates how quickly the kernel decays).
 \newpage
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item SubProblem 1
+         \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.6\textwidth]{p3.1.png}
+            \end{figure}
+        \item SubProblem 2
+        \begin{enumerate}
+            \item a : $mse =7.955749288900331$
+            \item b : $mse = 8.708150363771939$
+            \item c : $mse = 5.967024534016803$
+            \item d : $mse = 58.89042789823659$ $\rightarrow$ This model appears to be overfitting, we only have 57 features in our training points and this model has 49 cosine features, enabling the fit to oscillate heavily between points, causing high variance and low bias. (In math words, the projection space is large enough to interpolate noise)
+        \end{enumerate}
+        \item he transforms $\phi$ allow us to turn a simple linear model into a much more expressive model.
+Instead of fitting a straight line in the original input space, we map the input into a higher-dimensional feature space where nonlinear relationships (polynomial trends, periodic behavior, etc.) can be represented.
+
+\item Computing $\mathbf w^* = (\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top \mathbf y$
+requires building $\mathbf X^\top \mathbf X$ in $O(ND^2)$ time and inverting a
+$D \times D$ matrix in $O(D^3)$ time. After training, we only store $\mathbf w \in \mathbb R^D$, so the model size is $O(D)$.
+It does \emph{not} grow with $N$. To make a prediction $x^*$, we compute $\hat y = \mathbf w^\top \phi(x^*)$,
+which costs $O(D)$. Prediction does not depend on $N$. Linear regression has higher training cost but very fast prediction and fixed model size.
+kNN and kernel regression have almost negligible training cost, but prediction is expensive
+and grows linearly with $N$. As $N$ grows, linear regression becomes much more
+efficient at testing.
+
+\item kNN, kernel regression, and linear regression (with bases) differ in how they control model
+complexity and how they generalize. kNN and kernel regression are non-parametric methods. They store the entire training
+dataset and make predictions based on local neighborhoods. They are flexible and can adapt to complex patterns(as discussed in lecture), but prediction time scales with $N$, and they can easily overfit if the neighborhood is too small (small $k$ or small $\tau$). Linear regression with basis functions is parametric. After training, it only stores
+the weight vector $\mathbf w$, so prediction is fast and independent of $N$. The choice of basis controls model flexibility. With too few basis functions the model
+underfits; with too many it overfits. No regression method is universally best. The best model depends on the data and the
+bias–variance tradeoff. 
+	\end{enumerate}
 \end{solution}
 
 \newpage
@@ -338,7 +564,189 @@ dictates how quickly the kernel decays).
 \newpage
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item SubProblem 1
+
+By Bayes' rule,
+\[
+p(\mathbf w\mid \mathbf X,\mathbf y)\ \propto\ p(\mathbf y\mid \mathbf w,\mathbf X)\,p(\mathbf w).
+\]
+Thus maximizing the posterior is equivalent to maximizing the log-posterior:
+\[
+\arg\max_{\mathbf w}\log p(\mathbf w\mid \mathbf X,\mathbf y)
+=
+\arg\max_{\mathbf w}\left[\log p(\mathbf y\mid \mathbf w,\mathbf X)+\log p(\mathbf w)\right].
+\]
+
+\textbf{Likelihood.}
+From $y_n=\mathbf w^\top \mathbf x_n+\epsilon_n$ with $\epsilon_n\sim\mathcal N(0,\sigma^2)$,
+\[
+p(\mathbf y\mid \mathbf w,\mathbf X)=\mathcal N(\mathbf X\mathbf w,\sigma^2\mathbf I),
+\]
+so (dropping constants independent of $\mathbf w$)
+\[
+\log p(\mathbf y\mid \mathbf w,\mathbf X)
+= -\frac{1}{2\sigma^2}\|\mathbf y-\mathbf X\mathbf w\|_2^2 + C.
+\]
+
+\textbf{Prior.}
+Given $\mathbf w\sim \mathcal N\!\left(\mathbf 0,\frac{\sigma^2}{\lambda}\mathbf I\right)$,
+\[
+\log p(\mathbf w)
+= -\frac{\lambda}{2\sigma^2}\|\mathbf w\|_2^2 + C'.
+\]
+
+\textbf{Combine.}
+Therefore,
+\[
+\log p(\mathbf y\mid \mathbf w,\mathbf X)+\log p(\mathbf w)
+=
+-\frac{1}{2\sigma^2}\|\mathbf y-\mathbf X\mathbf w\|_2^2
+-\frac{\lambda}{2\sigma^2}\|\mathbf w\|_2^2
++ \text{const}.
+\]
+Maximizing this is equivalent to minimizing its negative, and multiplying by $\sigma^2$ does not change
+the minimizer. Hence,
+\[
+\arg\max_{\mathbf w} p(\mathbf w\mid \mathbf X,\mathbf y)
+=
+\arg\min_{\mathbf w}\left(
+\frac{1}{2}\|\mathbf y-\mathbf X\mathbf w\|_2^2
++\frac{\lambda}{2}\|\mathbf w\|_2^2
+\right)
+=
+\arg\min_{\mathbf w}\ \mathcal L_{\text{ridge}}(\mathbf w).
+\]
+
+\item SubProblem 2 
+
+Recall the ridge loss:
+\[
+\mathcal L_{\text{ridge}}(\mathbf w)
+=
+\frac{1}{2}\|\mathbf y-\mathbf X\mathbf w\|_2^2
++
+\frac{\lambda}{2}\|\mathbf w\|_2^2.
+\]
+
+Take the gradient with respect to $\mathbf w$:
+
+\[
+\nabla_{\mathbf w}\mathcal L_{\text{ridge}}(\mathbf w)
+=
+- \mathbf X^\top(\mathbf y-\mathbf X\mathbf w)
++
+\lambda \mathbf w.
+\]
+
+Set the gradient equal to zero:
+
+\[
+- \mathbf X^\top \mathbf y
++ \mathbf X^\top \mathbf X \mathbf w
++ \lambda \mathbf w
+= 0.
+\]
+
+Rearrange:
+
+\[
+(\mathbf X^\top \mathbf X + \lambda \mathbf I)\mathbf w
+=
+\mathbf X^\top \mathbf y.
+\]
+
+Assuming $(\mathbf X^\top \mathbf X + \lambda \mathbf I)$ is invertible, we obtain
+
+\[
+\boxed{
+\mathbf w_{\text{ridge}}
+=
+(\mathbf X^\top \mathbf X + \lambda \mathbf I)^{-1}
+\mathbf X^\top \mathbf y.
+}
+\]
+
+\item SubProblem 3 
+By Bayes' rule,
+\[
+p(\mathbf w\mid \mathbf X,\mathbf y)\ \propto\ p(\mathbf y\mid \mathbf w,\mathbf X)\,p(\mathbf w),
+\]
+so maximizing the posterior is equivalent to maximizing
+$\log p(\mathbf y\mid \mathbf w,\mathbf X)+\log p(\mathbf w)$.
+
+\textbf{Likelihood.}
+With $\mathbf y\mid \mathbf w,\mathbf X \sim \mathcal N(\mathbf X\mathbf w,\sigma^2\mathbf I)$,
+\[
+\log p(\mathbf y\mid \mathbf w,\mathbf X)
+=
+-\frac{1}{2\sigma^2}\|\mathbf y-\mathbf X\mathbf w\|_2^2 + C.
+\]
+
+\textbf{Prior.}
+Assume the coordinates are independent and $w_d \sim \mathrm{Laplace}(0,b)$ with
+$b=\frac{2\sigma^2}{\lambda}$. Then
+\[
+p(\mathbf w)=\prod_{d=1}^D \frac{1}{2b}\exp\!\left(-\frac{|w_d|}{b}\right),
+\]
+hence
+\[
+\log p(\mathbf w)
+=
+\sum_{d=1}^D\left[-\log(2b)-\frac{|w_d|}{b}\right]
+=
+-\frac{1}{b}\sum_{d=1}^D |w_d| + C'
+=
+-\frac{\lambda}{2\sigma^2}\|\mathbf w\|_1 + C'.
+\]
+
+\textbf{Combine.}
+Therefore (dropping constants),
+\[
+\log p(\mathbf y\mid \mathbf w,\mathbf X)+\log p(\mathbf w)
+=
+-\frac{1}{2\sigma^2}\|\mathbf y-\mathbf X\mathbf w\|_2^2
+-\frac{\lambda}{2\sigma^2}\|\mathbf w\|_1
++\text{const}.
+\]
+Maximizing this is equivalent to minimizing its negative, and multiplying by $\sigma^2$ does not
+change the minimizer. Thus,
+\[
+\arg\max_{\mathbf w} p(\mathbf w\mid \mathbf X,\mathbf y)
+=
+\arg\min_{\mathbf w}\left(
+\frac{1}{2}\|\mathbf y-\mathbf X\mathbf w\|_2^2
++\frac{\lambda}{2}\|\mathbf w\|_1
+\right)
+=
+\arg\min_{\mathbf w}\ \mathcal L_{\text{lasso}}(\mathbf w).
+\]
+
+\item SubProblem 4
+There is no general closed-form solution for the LASSO estimator because the
+$\ell_1$ penalty $\|\mathbf w\|_1 = \sum_d |w_d|$ is not differentiable at $w_d = 0$.
+This non-differentiability prevents us from solving the optimization problem by simply setting the gradient equal to zero, as we do in $OLS$ or ridge regression. Unlike the $\ell_2$ penalty in ridge regression, which produces a smooth, quadratic objective with a linear system solution, the $\ell_1$ introduces non-smoothness the objective function. As a result, the minimizer cannot generally be
+written in closed form and must instead be found using numerical optimization
+methods such as coordinate descent.
+
+\item SubProblem 5
+The unregularized basis (d) model massively overfits the training data, making highly oscillatory predictions and a large test MSE. as described earlier, because the 49 cosine basis functions create a very expressive model with high variance.
+
+LASSO regularization adds an $\ell_1$ penalty,
+\[
+\frac{\lambda}{2}\|w\|_1,
+\]
+which shrinks coefficients toward zero and effectively reduces model complexity and expressiveness. 
+
+For $\lambda = 1$, the regularization is weak and the model still shows significant variance and overfitting. For $\lambda = 10$, the regularization is stronger, many coefficients are driven closer to zero, the fitted curve becomes smoother, and the test MSE decreases substantially.
+
+Thus, increasing $\lambda$ reduces variance and improves generalization, even though it introduces additional bias.
+
+\begin{figure}[H]
+            \centering
+            \includegraphics[width=0.6\textwidth]{p4.5.png}
+            \end{figure}
+	\end{enumerate}
 \end{solution}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -346,8 +754,8 @@ dictates how quickly the kernel decays).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
 
-\textbf{Name}:
+\textbf{Name}: Ibrahim Khaliliya
 
-\textbf{Collaborators and Resources}: 
+\textbf{Collaborators and Resources}: Lecture slides 
 
 \end{document}
