@@ -1,6 +1,6 @@
-\documentclass[submit]{../harvardml}
-\usepackage{../common}
-
+\documentclass[submit]{harvardml}
+\usepackage{common}
+\usepackage{float}
 \course{CS1810-S26}
 \assignment{Homework \#2}
 \duedate{February 27, 2026 at 11:59 PM}
@@ -179,7 +179,115 @@ times when we are likely to detect the planet.
 \newpage
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item 
+        \begin{enumerate}
+            \item Following the hint we show that MSE expression decomposes into the stated expression by adding and subtracting $f(x)$.
+            \[
+            \text{MSE} = \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(y - \hat f_\mathcal{D}(\mathbf{x}))^2] = \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[((y-f(x)) +(f(x) - \hat f_\mathcal{D}(x)))^2]
+            \]
+            Let $A =(y-f(x)) $ ,and $B =(f(x) - \hat f_\mathcal{D}(x)) $. Next we expand the terms:
+            \[
+            MSE = \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(y-f(x))^2] + \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(f(x) - \hat f_\mathcal{D}(x))^2] + 2 \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(y-f(x))(f(x) - \hat f_\mathcal{D}(x))] 
+            \]
+
+            Since the first term does not depend on the training set, and since $f(x)$ is constant in respect to $y$, then the second term does not depend on $y$ the expressions reduces to:
+
+            \[
+            MSE = \mathbb{E}_{y|\mathbf{x}}[(y-f(x))^2] + \mathbb{E}_{\mathcal{D}}[(f(x) - \hat f_\mathcal{D}(x))^2] + 2 \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(y-f(x))(f(x) - \hat f_\mathcal{D}(x))] 
+            \]
+
+            With $2 \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(y-f(x))(f(x) - \hat f_\mathcal{D}(x))] = \text{third term}$.
+            \item From Adam's law it follows that:
+
+            \[
+            2 \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(y-f(x))(f(x) - \hat f_\mathcal{D}(x))] =2 \mathbb{E}_{ _\mathcal{D}}[\mathbb{E}_{y|\mathbf{x}}[(y-f(x))(f(x) - \hat f_\mathcal{D}(x))]]
+            \]
+            Since the factor ($f(x) - \hat{f}_\mathcal{D}(x))$ does not depend on $y$
+            we can write our expression as:
+
+            \[
+            2 \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(y-f(x))(f(x) - \hat f_\mathcal{D}(x))] =2 \mathbb{E}_{ _\mathcal{D}}[(f(x) - \hat f_\mathcal{D}(x))\mathbb{E}_{y|\mathbf{x}}[(y-f(x))]]
+            \]
+            \medskip
+            
+            Since $y = f(x) +\epsilon$ then $\epsilon  =  y- f(x)$ it follows that:
+            \[
+                    2 \mathbb{E}_{ _\mathcal{D}}[(f(x) - \hat f_\mathcal{D}(x))\mathbb{E}_{y|\mathbf{x}}[(y-f(x))]] = 2\mathbb{E}_{\mathcal{D}}[(f(x)-\hat{f}_\mathcal{D}(x)\mathbb{E}_{\epsilon|x}(\epsilon)]
+            \]
+
+            We also now that $\mathbb{E}_{\epsilon|x} =0$. Hence,
+            \[
+            2 \mathbb{E}_{ _\mathcal{D}}[(f(x) - \hat f_\mathcal{D}(x))\mathbb{E}_{y|\mathbf{x}}[(y-f(x))]] = 2\mathbb{E}_{\mathcal{D}}[(f(x)-\hat{f}_\mathcal{D}(x)\mathbb{E}_{\epsilon|x}(\epsilon)] =2\mathbb{E}_{\mathcal{D}}[(f(x)-\hat{f}_\mathcal{D}(x) \cdot 0] = 0
+            \]
+
+            \item We know that $y = f(x) +\epsilon$, substituting into the expression, we get:
+            \[
+            \mathbb{E}_{y|\mathbf{x}}[((f(x) +\epsilon)-f(x))^2]  =\mathbb{E}_{\epsilon|\mathbf{x}}[\epsilon^2]
+            \]
+            Recall: Var($\epsilon | x$) = $\mathbb{E}[\epsilon^2 |x] - (\mathbb{E}[\epsilon | x])^2$, However we know that $\mathbb{E}[\epsilon |x]=0$. Hence,
+            \[
+            Var(\epsilon|x)= \mathbb{E}[\epsilon^2 |x] = \sigma^2.
+            \]
+            \item We start by adding and subtracting $\bar f(\mathbf{x})$
+
+            \[
+            \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(f(x) - \hat f_\mathcal{D}(x))^2] =   \mathbb{E}_{\mathcal{D}, y|\mathbf{x}}[(f(x) -\bar f(\mathbf{x})) + (\bar f(\mathbf{x}) - \hat f_\mathcal{D}(x))^2]
+            \]
+            \[
+            =
+            \big(f(x) - \bar f(x)\big)^2
+            +\big(\bar f(x) - \hat f_D(x)\big)^2
+            +2\big(f(x) - \bar f(x)\big)\big(\bar f(x) - \hat f_D(x)\big).
+            \]
+            Taking expectation over $D$:
+            \[
+            \mathbb{E}_D[(f(x) - \hat f_D(x))^2]
+            = \big(f(x) - \bar f(x)\big)^2
+            + \mathbb{E}_D\big[(\bar f(x) - \hat f_D(x))^2\big]
+            +2\big(f(x) - \bar f(x)\big)
+            \mathbb{E}_D[\bar f(x) - \hat f_D(x)].
+            \]
+            
+            Since
+            \[
+            \mathbb{E}_D[\bar f(x) - \hat f_D(x)]
+            =
+            \bar f(x) - \mathbb{E}_D[\hat f_D(x)]
+            =
+            \bar f(x) - \bar f(x)
+            =
+            0,
+            \]
+        Hence,
+
+        \[
+        \mathbb{E}_D[(f(x) - \hat f_D(x))^2]
+        =
+        (f(x) - \bar f(x))^2
+        +
+        \mathbb{E}_D[(\bar f(x) - \hat f_D(x))^2].
+        \]
+        \end{enumerate}
+        \item For my bases, I choose a simple 4-degree polynomial base, and and a finite Fourier basis with frequency 1 it projects the 1d input into a space spanned by sine and cosine waves of increasing frequency.
+        \item Observing the 10 samples fit in basis 1 we can notice that they are roughly linear and and the mean the fit of the man learned model is also roughly linear indicating high bias. Additionally, both the individual fits and the mean fit are deviating heavily from the ground truth model fit indicating low variance. However in basis 2 we can really start noticing the bias-variance tradeoff we can observe the fits are much close to the the ground truth model and has lower bias and higher variance than basis 1, however a polynomial cannot from cannot capture the periodic structure of the true generating process. Lastly for Basis 3 the individual fits differ substantially in their oscillatory behavior, indicating high variance across datasets. While the Fourier basis has the capacity to represent periodic structure and therefore low bias potential, the small sample size leads to overfitting and high variance.
+        
+        
+        \begin{figure}[H]
+        \includegraphics[width=0.5\textwidth]{basis1.png}
+        \includegraphics[width=0.5\textwidth]{basis2.png}
+        \includegraphics[width=0.5\textwidth]{basis3.png}
+        
+        \end{figure}
+
+        \item Basis 1 will remain biased however variance will decrease. Since our function is monotonic no matter how much we increase the size of our data set the best possible scenario for this model will still be "wrong". As for basis 2, variance will also drop and would approximate the sine better, still imperfectly since it's a polynomial. As for Basis 3 variance will drop significantly and this will probably become the best model, by increasing the size of our data set the model stops reacting to noise and begins to react to probability distributions.
+        \item Classification probabilities for  $t = 0.1: 0.49858229125742837, t = 3.2: 0.4887376187601766$
+        Model variances for $ t = 0.1: 0.00036293344824282504, t = 3.2: 0.000520494151696098$
+        For t = 0.1, the first model prediction is very close to 0.5, so the model is  uncertain about the class label at that point (either outcome is about equally likely). The variance measures a different uncertainty source, the model/data uncertainty or we can think about it as how sensitive the prediction is to which 30-point dataset we happened to train on. Comparing the two points, both have similarly high classification uncertainty (because both probabilities are near 0.5) But at $t=3.2$ the variance is higher indicating higher sensitivity to the data as we progress in time.
+        \item Comparing the observations recorded by the telescopes, the alternative telescope shows a higher detection rate, and a lot of consistent disagreements between the two telescope at individual timestamps(the alternative consistently reports more 1s) suggesting a telescope. A reasonable model for this would be logistic regression where each telescope his its own confusion matrix. Refitting only makes if we incorporate that telescope-specific bias (or at least we treat the alternate data as another noisy measurement) then combining both sources should reduce variance.
+        \item basis1 average error (10-fold): $0.486667$ , basis2 average error (10-fold): $0.296667$, basis3 average error (10-fold): $0.516667$
+        Basis2 achieves the lowest cross-validation error because it balances bias and variance. It is flexible enough to approximate the underlying sinusoidal structure better than the linear basis, while being more stable than the high-variance Fourier basis under limited data.
+	\end{enumerate}
 \end{solution}
 
 
@@ -265,7 +373,400 @@ These formulas are from the matrix cookbook linked here: \href{https://www.math.
 \newpage
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item $\ln p(D;\pi)
+=
+\sum_{i=1}^{n}
+\sum_{k=1}^{K}
+y_{ik}
+\left(
+\ln \pi_k
++
+\ln p(x_i \mid y = C_k)
+\right).$
+\item \[
+\ell(\pi)
+=
+\sum_{i=1}^{n}
+\sum_{k=1}^{K}
+y_{ik} \ln \pi_k
+=
+\sum_{k=1}^{K}
+N_k \ln \pi_k,
+\quad
+\text{where }
+N_k = \sum_{i=1}^{n} y_{ik}.
+\]
+
+\[
+\text{Constraint: }
+\sum_{k=1}^{K} \pi_k - 1 = 0.
+\]
+
+\[
+\mathcal{L}(\pi,\lambda)
+=
+\sum_{k=1}^{K} N_k \ln \pi_k
++
+\lambda
+\left(
+\sum_{k=1}^{K} \pi_k - 1
+\right).
+\]
+
+\[
+\frac{\partial \mathcal{L}}{\partial \pi_k}
+=
+\frac{N_k}{\pi_k}
++
+\lambda
+= 0
+\quad
+\Rightarrow
+\quad
+\pi_k
+=
+-\frac{N_k}{\lambda}.
+\]
+
+\[
+\frac{\partial \mathcal{L}}{\partial \lambda}
+=
+\sum_{k=1}^{K} \pi_k - 1
+= 0.
+\]
+
+Substituting:
+
+\[
+\sum_{k=1}^{K}
+\left(
+-\frac{N_k}{\lambda}
+\right)
+=
+1
+\quad
+\Rightarrow
+\quad
+-\frac{1}{\lambda}
+\sum_{k=1}^{K} N_k
+=
+1.
+\]
+
+Since
+\[
+\sum_{k=1}^{K} N_k = n,
+\]
+
+we obtain
+
+\[
+-\frac{n}{\lambda} = 1
+\quad
+\Rightarrow
+\quad
+\lambda = -n.
+\]
+
+Therefore,
+\[
+\hat{\pi}_k
+=
+\frac{N_k}{n}
+=
+\frac{1}{n}
+\sum_{i=1}^{n} y_{ik}.
+\]
+
+
+Thus, the MLE of  $\pi_k$ is the empirical fraction of samples in class  $k$ making intuitive.
+\item \[
+\ell(\mu_k)
+=
+\sum_{i=1}^{n}
+y_{ik}\log \mathcal{N}(x_i \mid \mu_k,\Sigma).
+\]
+
+Using the Gaussian log-density,
+
+\[
+\log \mathcal{N}(x_i \mid \mu_k,\Sigma)
+=
+-\frac{1}{2}
+(x_i-\mu_k)^\top \Sigma^{-1} (x_i-\mu_k)
++ \text{const},
+\]
+
+we obtain
+
+\[
+\ell(\mu_k)
+=
+-\frac{1}{2}
+\sum_{i=1}^{n}
+y_{ik}
+(x_i-\mu_k)^\top \Sigma^{-1} (x_i-\mu_k)
++ \text{const}.
+\]
+
+Using the identity
+\[
+\frac{\partial}{\partial \mu}
+\big[(x-\mu)^\top A (x-\mu)\big]
+=
+-2A(x-\mu)
+\quad (\text{for symmetric }A),
+\]
+
+with \(A=\Sigma^{-1}\), the gradient is
+
+\[
+\nabla_{\mu_k} \ell
+=
+\sum_{i=1}^{n}
+y_{ik}\Sigma^{-1}(x_i-\mu_k).
+\]
+
+Factoring out \(\Sigma^{-1}\),
+
+\[
+\nabla_{\mu_k} \ell
+=
+\Sigma^{-1}
+\left(
+\sum_{i=1}^{n} y_{ik} x_i
+-
+\mu_k \sum_{i=1}^{n} y_{ik}
+\right).
+\]
+
+Let
+\[
+N_k = \sum_{i=1}^{n} y_{ik}.
+\]
+
+Then the gradient simplifies to
+
+\[
+\nabla_{\mu_k} \ell
+=
+\Sigma^{-1}
+\left(
+\sum_{i=1}^{n} y_{ik} x_i
+-
+N_k \mu_k
+\right).
+\]
+
+In matrix form, letting \(X \in \mathbb{R}^{n\times d}\) contain rows \(x_i^\top\) and
+\(y_k \in \mathbb{R}^n\) be the vector with entries \(y_{ik}\),
+
+\[
+\nabla_{\mu_k} \ell
+=
+\Sigma^{-1}
+\left(
+X^\top y_k
+-
+N_k \mu_k
+\right).
+\]
+\item \[
+\ell(\mu_k)
+=
+\sum_{i=1}^{n}
+y_{ik}\log \mathcal{N}(x_i \mid \mu_k,\Sigma)
+=
+-\frac{1}{2}
+\sum_{i=1}^{n}
+y_{ik}(x_i-\mu_k)^\top \Sigma^{-1}(x_i-\mu_k)
++\text{const}.
+\]
+
+From the previous result,
+\[
+\nabla_{\mu_k}\ell
+=
+\sum_{i=1}^{n} y_{ik}\Sigma^{-1}(x_i-\mu_k)
+=
+\Sigma^{-1}\left(\sum_{i=1}^{n} y_{ik}x_i - \mu_k\sum_{i=1}^{n} y_{ik}\right).
+\]
+
+Set the gradient to zero:
+\[
+\Sigma^{-1}\left(\sum_{i=1}^{n} y_{ik}x_i - \mu_k\sum_{i=1}^{n} y_{ik}\right)=0
+\quad\Longrightarrow\quad
+\sum_{i=1}^{n} y_{ik}x_i - \mu_k\sum_{i=1}^{n} y_{ik}=0.
+\]
+
+Let \(N_k=\sum_{i=1}^{n} y_{ik}\). Solving for \(\mu_k\) gives the MLE:
+\[
+\hat{\mu}_k
+=
+\frac{1}{N_k}\sum_{i=1}^{n} y_{ik}x_i.
+\]
+
+\item \[
+\ell(\Sigma)
+=
+\sum_{i=1}^{n}
+\sum_{k=1}^{K}
+y_{ik}
+\log \mathcal{N}(x_i \mid \mu_k,\Sigma).
+\]
+
+Using the Gaussian log-density,
+
+\[
+\log \mathcal{N}(x_i \mid \mu_k,\Sigma)
+=
+-\frac{1}{2}
+\log |\Sigma|
+-\frac{1}{2}
+(x_i-\mu_k)^\top \Sigma^{-1}(x_i-\mu_k)
++ \text{const},
+\]
+
+we obtain
+
+\[
+\ell(\Sigma)
+=
+-\frac{1}{2}
+\sum_{i=1}^{n}
+\sum_{k=1}^{K}
+y_{ik}
+\left[
+\log |\Sigma|
++
+(x_i-\mu_k)^\top \Sigma^{-1}(x_i-\mu_k)
+\right]
++ \text{const}.
+\]
+
+Let \(N = \sum_{i=1}^{n}\sum_{k=1}^{K} y_{ik} = n\).
+Using the matrix identities
+
+\[
+\frac{\partial}{\partial \Sigma}\log|\Sigma|
+=
+\Sigma^{-T},
+\qquad
+\frac{\partial}{\partial \Sigma}
+\left[
+(x-\mu)^\top \Sigma^{-1}(x-\mu)
+\right]
+=
+-\Sigma^{-T}(x-\mu)(x-\mu)^\top\Sigma^{-T},
+\]
+
+we obtain
+
+\[
+\nabla_{\Sigma}\ell
+=
+-\frac{1}{2}
+\left[
+\sum_{i=1}^{n}\sum_{k=1}^{K}
+y_{ik}\Sigma^{-T}
+-
+\sum_{i=1}^{n}\sum_{k=1}^{K}
+y_{ik}
+\Sigma^{-T}(x_i-\mu_k)(x_i-\mu_k)^\top\Sigma^{-T}
+\right].
+\]
+
+Factoring out \(\Sigma^{-T}\),
+
+\[
+\nabla_{\Sigma}\ell
+=
+-\frac{1}{2}
+\Sigma^{-T}
+\left[
+N I
+-
+\sum_{i=1}^{n}\sum_{k=1}^{K}
+y_{ik}(x_i-\mu_k)(x_i-\mu_k)^\top
+\Sigma^{-T}
+\right].
+\]
+
+A cleaner equivalent expression is
+
+\[
+\nabla_{\Sigma}\ell
+=
+\frac{1}{2}
+\Sigma^{-T}
+\left[
+\sum_{i=1}^{n}\sum_{k=1}^{K}
+y_{ik}(x_i-\mu_k)(x_i-\mu_k)^\top
+-
+N\Sigma
+\right]
+\Sigma^{-T}.
+\]
+
+\item \[
+\ell(\Sigma)
+=
+-\frac{1}{2}
+\sum_{i=1}^{n}\sum_{k=1}^{K}
+y_{ik}
+\left[
+\log|\Sigma|
++
+(x_i-\mu_k)^\top \Sigma^{-1}(x_i-\mu_k)
+\right]
++\text{const}.
+\]
+
+From the previous question, the gradient can be written as
+\[
+\nabla_{\Sigma}\ell
+=
+\frac{1}{2}\Sigma^{-T}
+\left[
+\sum_{i=1}^{n}\sum_{k=1}^{K}
+y_{ik}(x_i-\mu_k)(x_i-\mu_k)^\top
+-
+n\Sigma
+\right]
+\Sigma^{-T}.
+\]
+
+Setting the gradient to zero and using that \(\Sigma^{-T}\) is invertible,
+\[
+\sum_{i=1}^{n}\sum_{k=1}^{K}
+y_{ik}(x_i-\mu_k)(x_i-\mu_k)^\top
+-
+n\Sigma
+=
+0.
+\]
+
+Solving for \(\Sigma\) gives the maximum-likelihood estimator
+\[
+\hat{\Sigma}
+=
+\frac{1}{n}
+\sum_{i=1}^{n}\sum_{k=1}^{K}
+y_{ik}(x_i-\mu_k)(x_i-\mu_k)^\top.
+\]
+
+Equivalently, letting \(N_k=\sum_{i=1}^{n}y_{ik}\),
+\[
+\hat{\Sigma}
+=
+\frac{1}{n}
+\sum_{k=1}^{K}
+\sum_{i:\,y_i=C_k}
+(x_i-\hat{\mu}_k)(x_i-\hat{\mu}_k)^\top.
+\] 
+
+	\end{enumerate}
 \end{solution}
 
 \newpage
@@ -337,7 +838,21 @@ After implementing the above classifiers, complete the following exercises:
 \newpage
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item The Gaussian model with shared covariance and the raw softmax classifier both produce linear decision boundaries because they are linear functions of the input features. The Gaussian model with separate covariances produces curved boundaries due to class-specific quadratic terms. The softmax classifier with the nonlinear feature map produces nonlinear boundaries because it is linear in the transformed feature space but nonlinear in the original space. kNN produces highly irregular boundaries, especially for $k=1$, because it is non-parametric and makes decisions based purely on local neighborhoods. Increasing $k$ smooths the boundary by reducing variance through local averaging. \begin{figure}[H]
+	    \centering
+	    \includegraphics[width=0.3\linewidth]{softmax_phi.png} \includegraphics[width=0.3\linewidth]{softmax_raw.png}
+        \includegraphics[width=0.3\linewidth]{knn_k1.png}
+        \includegraphics[width=0.3\linewidth]{knn_k5.png}
+        \includegraphics[width=0.3\linewidth]{gaussian_separate.png}
+        \includegraphics[width=0.3\linewidth]{gaussian_shared.png}
+	\end{figure}
+    \item Model (c) prediction: $[0]$
+Model (c) probabilities: $[[9.99999653e-01 3.47070714e-07 2.82260310e-10]]$
+Model (d) prediction: $[1]$
+Model (d) probabilities: $[[0.2538532  0.65886064 0.08728616]]$. The difference arises because model (c) is linear in the original feature space, while model (d) is linear in a transformed nonlinear feature space, leading to different decision geometry.
+\item Using a classifier trained on past loan decisions risks perpetuating historical biases, especially if past approvals reflected systemic discrimination (historical racial/gender based discrimination and whatnot). Credit scores and debt-to-income ratios are correlated with socioeconomic and demographic factors, potentially leading to discrimination and unintended biases. 
+		\end{enumerate}
 \end{solution}
 
 \newpage
@@ -402,7 +917,36 @@ Try not to touch anything that is not in between ``\textit{sol}" and ``\textit{l
 \pagebreak
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item \[\;L(w)=\frac{1}{2}\|Xw-y\|_2^2=\frac{1}{2}(Xw-y)^\top (Xw-y)\;\]
+\[\;L(w)=\frac{1}{2}\left(w^\top X^\top Xw-2y^\top Xw+y^\top y\right)\;\]
+\[\;\nabla_w L(w)=\frac{1}{2}\left(2X^\top Xw-2X^\top y\right)\;\]
+\[\;\nabla_w L(w)=X^\top Xw-X^\top y\;\]
+\[\;\nabla_w L(w)=X^\top (Xw-y)\;\]
+\item \[\;w^{(t+1)}=w^{(t)}-\eta\,\nabla_w L\!\left(w^{(t)}\right)\;\]
+\[\;\nabla_w L(w)=X^\top(Xw-y)\;\]
+\[\;w^{(t+1)}=w^{(t)}-\eta\,X^\top\!\left(Xw^{(t)}-y\right)\;\]
+
+\[\;L_{\text{ridge}}(w)=\frac{1}{2}\|Xw-y\|_2^2+\frac{\lambda}{2}\|w\|_2^2\;\]
+\[\;\nabla_w L_{\text{ridge}}(w)=X^\top(Xw-y)+\lambda w\;\]
+\[\;w^{(t+1)}=w^{(t)}-\eta\left[X^\top\!\left(Xw^{(t)}-y\right)+\lambda w^{(t)}\right]\;\]
+
+\item \[\;L_{\text{ridge}}(w)=\frac{1}{2}\|Xw-y\|_2^2+\frac{\lambda}{2}\|w\|_2^2\;\]
+\[\;\nabla_w\left(\frac{1}{2}\|Xw-y\|_2^2\right)=X^\top(Xw-y)\;\]
+\[\;\nabla_w\left(\frac{\lambda}{2}\|w\|_2^2\right)=\frac{\lambda}{2}\nabla_w(w^\top w)=\frac{\lambda}{2}(2w)=\lambda w\;\]
+\[\;\nabla_w L_{\text{ridge}}(w)=X^\top(Xw-y)+\lambda w\;\]
+Compared to the unregularized gradient $X^\top(Xw-y)$, ridge adds the term $+\lambda w.$
+\item \[\;w^{(t+1)}=w^{(t)}-\eta\left[X^\top(Xw^{(t)}-y)+\lambda w^{(t)}\right]\;\]
+\[\;w^{(t+1)}=w^{(t)}-\eta X^\top(Xw^{(t)}-y)-\eta\lambda w^{(t)}\;\]
+\[\;w^{(t+1)}=(1-\eta\lambda)w^{(t)}-\eta X^\top(Xw^{(t)}-y)\;\]
+Thus ridge multiplies the current weights by $(1-\eta\lambda)$before the gradient step, causing shrinkage toward zero.
+\item In the unregularized case, the loss surface contains a flat hill, so the algorithms converge slowly and may end at different points along a subspace of minimizers; with ridge regularization, the loss becomes strictly convex with a unique minimum, improving conditioning and leading to faster, more stable convergence, particularly for Momentum and Adam. SGD remains slower overall.
+\begin{figure}[H]
+    \centering 
+    \includegraphics[width=0.8\linewidth]{output.png}
+   
+\end{figure}
+	\end{enumerate}
 \end{solution}
 
 
@@ -411,8 +955,8 @@ Try not to touch anything that is not in between ``\textit{sol}" and ``\textit{l
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \pagebreak
-\textbf{Name}:
+\textbf{Name}: Ibrahim Khaliliya 
 
 \textbf{Collaborators and Resources}: 
-
+(lecture slides, section 2 and 3blue1brown )
 \end{document}
