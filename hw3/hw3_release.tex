@@ -1,10 +1,10 @@
-\documentclass[submit]{../harvardml}
+\documentclass[submit]{harvardml}
 
 \course{CS1810-S26}
 \assignment{Homework \#3}
 \duedate{March 23, 2026 at 11:59 PM}
-
-\usepackage{../common}
+\usepackage{float}
+\usepackage{common}
 \usepackage[OT1]{fontenc}
 \usepackage[colorlinks,citecolor=blue,urlcolor=blue]{hyperref}
 \usepackage{graphicx}
@@ -218,9 +218,211 @@ an inner product in some feature space: $K(\boldx, \boldx') =
 \newpage
 
 \begin{solution}
-	Your solution here.
-\end{solution}
+\item 1. SubProblem 1
 
+(a)
+
+We expand
+\[
+K(\boldx,\boldx') = (1 + \boldx^\top \boldx')^2
+= (1 + x_1 x_1' + x_2 x_2')^2.
+\]
+
+Expanding gives
+\[
+1 + 2x_1 x_1' + 2x_2 x_2' + x_1^2 x_1'^2 + 2x_1 x_2 x_1' x_2' + x_2^2 x_2'^2.
+\]
+
+Define
+\[
+\bphi(\boldx) =
+\begin{bmatrix}
+1 \\
+\sqrt{2} x_1 \\
+\sqrt{2} x_2 \\
+x_1^2 \\
+\sqrt{2} x_1 x_2 \\
+x_2^2
+\end{bmatrix}.
+\]
+
+Then
+\[
+\bphi(\boldx)^\top \bphi(\boldx') = K(\boldx,\boldx').
+\]
+
+(b)
+
+Let $\boldx = (1,0)$ and $\boldx' = (1,1)$.
+
+\[
+K(\boldx,\boldx') = (1 + 1)^2 = 4.
+\]
+
+\[
+\bphi(1,0) =
+\begin{bmatrix}
+1 \\ \sqrt{2} \\ 0 \\ 1 \\ 0 \\ 0
+\end{bmatrix},
+\quad
+\bphi(1,1) =
+\begin{bmatrix}
+1 \\ \sqrt{2} \\ \sqrt{2} \\ 1 \\ \sqrt{2} \\ 1
+\end{bmatrix}.
+\]
+
+\[
+\bphi(\boldx)^\top \bphi(\boldx') = 4.
+\]
+\item 2. SubProblem 2
+
+(a)
+
+\begin{center}
+\includegraphics[width=0.45\textwidth]{output2a.png}
+\end{center}
+
+The data consists of two concentric circles, where one class surrounds the other. These data are not linearly separable in $\reals^2$, since any linear boundary would intersect both classes.
+
+(b)
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{output2b.png}
+\end{center}
+
+In the feature space $(x_1, x_2, x_1^2 + x_2^2)$, the two classes become separable. The inner circle has smaller values of $x_1^2 + x_2^2$, while the outer circle has larger values, creating separation along the $z$-axis. A linear separator of the form $z = c$ separates the two classes.
+
+(c)
+
+\begin{center}
+\includegraphics[width=0.45\textwidth]{output2c.png}
+\end{center}
+
+The learned decision boundary is circular and correctly separates the inner and outer circles. This reflects that ridge regression is linear in feature space, but induces a nonlinear (quadratic) boundary in the original space.
+
+\vspace{1em}
+
+\item 3. SubProblem 3
+
+
+(a)
+
+Let
+\[
+\balpha = (\boldK + \lambda I)^{-1} \boldy,
+\quad
+\boldw = \bPhi^\top \balpha.
+\]
+
+We verify that $\boldw$ satisfies ridge regression:
+\[
+(\bPhi^\top \bPhi + \lambda I)\boldw = \bPhi^\top \boldy.
+\]
+
+\[
+(\bPhi^\top \bPhi + \lambda I)\bPhi^\top \balpha
+= \bPhi^\top (\bPhi \bPhi^\top + \lambda I)\balpha
+= \bPhi^\top (\boldK + \lambda I)\balpha
+= \bPhi^\top \boldy.
+\]
+
+Thus $\boldw$ is valid.
+
+Now for a test point $\boldx^*$:
+\[
+f(\boldx^*) = \bphi(\boldx^*)^\top \boldw
+= \bphi(\boldx^*)^\top \bPhi^\top \balpha
+= \sum_{n=1}^N \alpha_n K(\boldx_n, \boldx^*).
+\]
+(b)
+
+We compute
+\[
+\balpha = (\boldK + \lambda I)^{-1} \boldy,
+\]
+where
+\[
+K_{ij} = (1 + \boldx_i^\top \boldx_j)^2.
+\]
+
+The scatter plot sizes each point proportionally to $|\alpha_n|$.s
+
+(c)
+
+\begin{center}
+\includegraphics[width=0.45\textwidth]{output3c.png}
+\end{center}
+
+Points with larger $|\alpha_n|$ are concentrated near the boundary between the two classes. These points contribute most to the prediction function
+\[
+f(\boldx) = \sum_{n=1}^N \alpha_n K(\boldx_n, \boldx),
+\]
+since they determine the location of the decision boundary. Points far from the boundary have smaller coefficients and are less influential.
+
+(d)
+
+The support vectors would be the points closest to the decision boundary.
+
+From the plot, these correspond to the inner edge of the outer ring and the outer edge of the inner ring.
+
+These points are most informative because they determine the location of the boundary.
+
+Having most $\alpha_n = 0$ is useful because it makes the model sparse, reducing computation and focusing only on the most important points.
+
+\item 4. SubProblem 4
+
+(a)
+
+\[
+\|\boldx - \boldx'\|^2 = \boldx^\top \boldx - 2 \boldx^\top \boldx' + \boldx'^\top \boldx'.
+\]
+
+Thus
+\[
+K(\boldx,\boldx')
+=
+\exp\left(-\frac{\boldx^\top \boldx}{2\sigma^2}\right)
+\exp\left(-\frac{\boldx'^\top \boldx'}{2\sigma^2}\right)
+\exp\left(\frac{\boldx^\top \boldx'}{\sigma^2}\right).
+\]
+
+(b)
+
+\[
+\exp\left(\frac{\boldx^\top \boldx'}{\sigma^2}\right)
+=
+\sum_{m=0}^{\infty}
+\frac{1}{m!}
+\left(\frac{\boldx^\top \boldx'}{\sigma^2}\right)^m.
+\]
+
+(c)
+
+The feature map for the RBF kernel is infinite-dimensional, so it is not practical to compute explicitly. The kernel trick allows us to compute inner products without constructing the feature map.
+
+(d)
+
+As $\sigma \to 0$:
+\[
+K(\boldx_i,\boldx_j) \to
+\begin{cases}
+1 & i=j \\
+0 & i \ne j
+\end{cases}
+\]
+
+Thus, the model memorizes the training data and predicts $0$ elsewhere.
+
+(e)
+
+As $\sigma \to \infty$:
+\[
+K(\boldx,\boldx') \to 1.
+\]
+
+Thus, all predictions become constant.
+
+\end{solution}
 \newpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -321,7 +523,287 @@ where $\hat{y}$ is a scalar output of the net when passing in the single datapoi
 \end{framed}
 
 \begin{solution}
-	Your solution here.
+\begin{enumerate}
+    \item[1.] We first determine the shapes of all parameters and intermediate variables.
+
+    Since $\bold{x}$ is a single datapoint with input dimension $M$, we have
+    \[
+    \bold{x} \in \reals^{M \times 1}.
+    \]
+    The first layer maps $\reals^M \to \reals^H$, so
+    \[
+    \bold{W}_1 \in \reals^{H \times M},
+    \qquad
+    \bold{b}_1 \in \reals^{H \times 1}.
+    \]
+    Therefore
+    \[
+    \bold{a}_1 = \bold{W}_1 \bold{x} + \bold{b}_1 \in \reals^{H \times 1},
+    \qquad
+    \bold{z}_1 = \sigma(\bold{a}_1) \in \reals^{H \times 1}.
+    \]
+
+    Since the second layer outputs a scalar, it maps $\reals^H \to \reals$, so
+    \[
+    \bold{W}_2 \in \reals^{1 \times H},
+    \qquad
+    \bold{b}_2 \in \reals.
+    \]
+    Hence
+    \[
+    a_2 = \bold{W}_2 \bold{z}_1 + \bold{b}_2 \in \reals,
+    \qquad
+    \hat{y} = z_2 = \sigma(a_2) \in \reals.
+    \]
+
+    If we instead process all $N$ datapoints at once, then the input matrix would be in $\reals^{M \times N}$, but for the formulas written here, since we are passing a single column vector $\bold{x}$, the dimensions above are the correct ones.
+
+    \item[2.] We now derive the gradients for one datapoint. The loss is
+    \[
+    L = -\left(y \log \hat{y} + (1-y)\log(1-\hat{y})\right).
+    \]
+
+    First compute the derivative with respect to $a_2$. Using the chain rule,
+    \[
+    \frac{\partial L}{\partial \hat{y}}
+    =
+    -\frac{y}{\hat{y}} + \frac{1-y}{1-\hat{y}},
+    \qquad
+    \frac{\partial \hat{y}}{\partial a_2}
+    =
+    \hat{y}(1-\hat{y}).
+    \]
+    Therefore
+    \[
+    \frac{\partial L}{\partial a_2}
+    =
+    \frac{\partial L}{\partial \hat{y}}
+    \frac{\partial \hat{y}}{\partial a_2}
+    =
+    \left(-\frac{y}{\hat{y}} + \frac{1-y}{1-\hat{y}}\right)\hat{y}(1-\hat{y})
+    =
+    \hat{y} - y.
+    \]
+
+    \begin{enumerate}
+        \item Since
+        \[
+        a_2 = \bold{W}_2 \bold{z}_1 + b_2,
+        \]
+        we have
+        \[
+        \frac{\partial a_2}{\partial b_2} = 1.
+        \]
+        Thus
+        \[
+        \frac{\partial L}{\partial b_2}
+        =
+        \frac{\partial L}{\partial a_2}
+        \frac{\partial a_2}{\partial b_2}
+        =
+        \hat{y} - y.
+        \]
+
+        \item Since
+        \[
+        a_2 = \sum_{h=1}^H W_2^h z_1^h + b_2,
+        \]
+        we get
+        \[
+        \frac{\partial a_2}{\partial W_2^h} = z_1^h.
+        \]
+        Hence
+        \[
+        \frac{\partial L}{\partial W_2^h}
+        =
+        \frac{\partial L}{\partial a_2}
+        \frac{\partial a_2}{\partial W_2^h}
+        =
+        (\hat{y} - y) z_1^h.
+        \]
+
+        \item We now compute $\frac{\partial L}{\partial b_1^h}$. By the hint, only the $h$th coordinates of $\bold{a}_1$ and $\bold{z}_1$ depend on $b_1^h$. Thus
+        \[
+        \frac{\partial L}{\partial b_1^h}
+        =
+        \frac{\partial L}{\partial a_2}
+        \frac{\partial a_2}{\partial z_1^h}
+        \frac{\partial z_1^h}{\partial a_1^h}
+        \frac{\partial a_1^h}{\partial b_1^h}.
+        \]
+        Now,
+        \[
+        \frac{\partial L}{\partial a_2} = \hat{y}-y,
+        \qquad
+        \frac{\partial a_2}{\partial z_1^h} = W_2^h,
+        \qquad
+        \frac{\partial z_1^h}{\partial a_1^h} = z_1^h(1-z_1^h),
+        \qquad
+        \frac{\partial a_1^h}{\partial b_1^h} = 1.
+        \]
+        Therefore
+        \[
+        \frac{\partial L}{\partial b_1^h}
+        =
+        (\hat{y}-y)\,W_2^h\,z_1^h(1-z_1^h).
+        \]
+
+        \item Finally,
+        \[
+        a_1^h = \sum_{j=1}^M W_1^{h,j} x^j + b_1^h,
+        \]
+        so
+        \[
+        \frac{\partial a_1^h}{\partial W_1^{h,j}} = x^j.
+        \]
+        Using the same chain rule as before,
+        \[
+        \frac{\partial L}{\partial W_1^{h,j}}
+        =
+        \frac{\partial L}{\partial a_2}
+        \frac{\partial a_2}{\partial z_1^h}
+        \frac{\partial z_1^h}{\partial a_1^h}
+        \frac{\partial a_1^h}{\partial W_1^{h,j}}.
+        \]
+        Substituting each term gives
+        \[
+        \frac{\partial L}{\partial W_1^{h,j}}
+        =
+        (\hat{y}-y)\,W_2^h\,z_1^h(1-z_1^h)\,x^j.
+        \]
+    \end{enumerate}
+
+    \item[3.] 
+
+    The intermediate variables are
+    \begin{align*}
+        v_1 &= x_1, \\
+        v_2 &= \sin(v_1), \\
+        v_3 &= \ln(v_2), \\
+        v_4 &= x_2, \\
+        v_5 &= e^{v_4}, \\
+        v_6 &= v_1 v_5, \\
+        v_7 &= v_3 + v_6, \\
+        f(x_1,x_2) &= v_7.
+    \end{align*}
+
+    \begin{enumerate}
+        \item Let $x_1 = \frac{\pi}{6}$ and $x_2 = 1$. Then
+        \[
+        v_1 = \frac{\pi}{6},
+        \qquad
+        v_2 = \sin\left(\frac{\pi}{6}\right) = \frac{1}{2},
+        \qquad
+        v_3 = \ln\left(\frac{1}{2}\right) = -\ln 2,
+        \]
+        \[
+        v_4 = 1,
+        \qquad
+        v_5 = e,
+        \qquad
+        v_6 = \frac{\pi}{6}e,
+        \qquad
+        v_7 = -\ln 2 + \frac{\pi e}{6}.
+        \]
+        Therefore
+        \[
+        f\left(\frac{\pi}{6},1\right)= -\ln 2 + \frac{\pi e}{6}.
+        \]
+
+        \item We now compute all derivatives with respect to $x_1$.
+
+        First,
+        \[
+        \frac{\partial v_1}{\partial x_1} = 1.
+        \]
+
+        Since $v_2 = \sin(v_1)$,
+        \[
+        \frac{\partial v_2}{\partial x_1}
+        =
+        \frac{\partial v_2}{\partial v_1}
+        \frac{\partial v_1}{\partial x_1}
+        =
+        \cos(v_1)\cdot 1
+        =
+        \cos(v_1).
+        \]
+        Evaluating at $x_1=\frac{\pi}{6}$,
+        \[
+        \frac{\partial v_2}{\partial x_1}
+        =
+        \cos\left(\frac{\pi}{6}\right)
+        =
+        \frac{\sqrt{3}}{2}.
+        \]
+
+        Since $v_3 = \ln(v_2)$,
+        \[
+        \frac{\partial v_3}{\partial x_1}
+        =
+        \frac{\partial v_3}{\partial v_2}
+        \frac{\partial v_2}{\partial x_1}
+        =
+        \frac{1}{v_2}\frac{\partial v_2}{\partial x_1}.
+        \]
+        At the given point,
+        \[
+        \frac{\partial v_3}{\partial x_1}
+        =
+        \frac{1}{1/2}\cdot \frac{\sqrt{3}}{2}
+        =
+        \sqrt{3}.
+        \]
+
+        Since $v_4 = x_2$, it does not depend on $x_1$, so
+        \[
+        \frac{\partial v_4}{\partial x_1} = 0.
+        \]
+
+        Since $v_5 = e^{v_4}$,
+        \[
+        \frac{\partial v_5}{\partial x_1}
+        =
+        \frac{\partial v_5}{\partial v_4}
+        \frac{\partial v_4}{\partial x_1}
+        =
+        e^{v_4}\cdot 0 = 0.
+        \]
+
+        Since $v_6 = v_1 v_5$, by the product rule,
+        \[
+        \frac{\partial v_6}{\partial x_1}
+        =
+        \frac{\partial v_1}{\partial x_1}v_5 + v_1\frac{\partial v_5}{\partial x_1}.
+        \]
+        Evaluating,
+        \[
+        \frac{\partial v_6}{\partial x_1}
+        =
+        1\cdot e + \frac{\pi}{6}\cdot 0
+        =
+        e.
+        \]
+
+        Since $v_7 = v_3 + v_6$,
+        \[
+        \frac{\partial v_7}{\partial x_1}
+        =
+        \frac{\partial v_3}{\partial x_1} + \frac{\partial v_6}{\partial x_1}
+        =
+        \sqrt{3} + e.
+        \]
+
+        Since $f(x_1,x_2)=v_7$, we conclude
+        \[
+        \frac{\partial f}{\partial x_1}
+        =
+        \frac{\partial v_7}{\partial x_1}
+        =
+        \sqrt{3} + e.
+        \]
+    \end{enumerate}
+\end{enumerate}
 \end{solution}
 
 
@@ -402,9 +884,267 @@ Fashion-MNIST images are $28 \times 28$ with 1 channel. After the stem's max-poo
 \end{problem}
 
 \begin{solution}
-	Your solution here.
-\end{solution}
+\begin{enumerate}
+    \item[(a)] 
+    \begin{enumerate}
+        \item We compute the total number of trainable parameters as a function of the number of residual blocks $K$.
 
+        The stem consists of
+        \[
+        \texttt{Conv2d}(1,64,3,\text{padding}=1,\text{bias}=\text{False}),
+        \]
+        so the convolution contributes
+        \[
+        3 \cdot 3 \cdot 1 \cdot 64 = 576
+        \]
+        parameters. The batch normalization layer contributes
+        \[
+        2 \cdot 64 = 128
+        \]
+        parameters. Thus the stem contributes
+        \[
+        576 + 128 = 704.
+        \]
+
+        Each residual block contains two convolutions of the form
+        \[
+        \texttt{Conv2d}(64,64,3,\text{padding}=1,\text{bias}=\text{False}),
+        \]
+        and each such convolution contributes
+        \[
+        3 \cdot 3 \cdot 64 \cdot 64 = 36864
+        \]
+        parameters. Since there are two of them, the convolutional part contributes
+        \[
+        2 \cdot 36864 = 73728.
+        \]
+        Each block also contains two batch normalization layers, each contributing
+        \[
+        2 \cdot 64 = 128,
+        \]
+        so the total batch norm contribution per block is
+        \[
+        2 \cdot 128 = 256.
+        \]
+        Therefore each residual block contributes
+        \[
+        73728 + 256 = 73984
+        \]
+        parameters.
+
+        The head is a linear layer
+        \[
+        \texttt{Linear}(64,10),
+        \]
+        so it contributes
+        \[
+        64 \cdot 10 + 10 = 650
+        \]
+        parameters.
+
+        Hence the total parameter count is
+        \[
+        N(K) = 704 + 73984K + 650 = 1354 + 73984K.
+        \]
+
+        \item For the fixed architecture $K=12$, the final test losses from the data sweep are:
+        \[
+        \begin{array}{c|c}
+        D & \text{test loss} \\ \hline
+        1000 & 0.65339 \\
+        2000 & 0.56990 \\
+        5000 & 0.44648 \\
+        10000 & 0.33728 \\
+        20000 & 0.29714 \\
+        30000 & 0.28619 \\
+        50000 & 0.236778
+        \end{array}
+        \]
+        As expected, the test loss decreases as the amount of training data increases.
+
+        \item We fit the scaling law
+        \[
+        L(N,D) \approx \frac{a}{N^\alpha} + \frac{b}{D^\beta} + L_\infty.
+        \]
+
+        For the model-size sweep, using the $K=18$ run as the anchor $\hat L_\infty$ and excluding that anchor from the fit, we obtain
+        \[
+        \hat{\alpha} = 1.119719,
+        \qquad
+        R_N^2 \approx 0.9683.
+        \]
+
+        For the data-size sweep, using the $D=50000$ run as the anchor $\hat L_\infty$ and excluding that anchor from the fit, we obtain
+        \[
+        \hat{\beta} = 0.668627,
+        \qquad
+        R_D^2 \approx 0.9763.
+        \]
+
+        We need to subtract $\hat L_\infty$ before taking logs because the empirical law is a power law for the \emph{gap}
+        \[
+        L - \hat L_\infty,
+        \]
+        not for $L$ itself. In other words, the approximately linear relationship on log-log axes is
+        \[
+        \log(L-\hat L_\infty) \approx \log a - \alpha \log N
+        \]
+        or
+        \[
+        \log(L-\hat L_\infty) \approx \log b - \beta \log D.
+        \]
+        If we skipped the subtraction, then as the loss approached its floor the log-log plot would bend and flatten rather than appearing approximately linear.
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.8\linewidth]{output3aiii.pdf}
+            \label{fig:placeholder}
+        \end{figure}
+    \end{enumerate}
+
+    \item[(b)]
+    \begin{enumerate}
+        \item Suppose the compute budget satisfies
+        \[
+        C_{\text{compute}} \approx 6ND.
+        \]
+        Then
+        \[
+        D = \frac{C_{\text{compute}}}{6N}.
+        \]
+        Substituting this into the scaling law gives
+        \[
+        L(N) \approx \frac{a}{N^\alpha} + \frac{b}{\left(C_{\text{compute}}/(6N)\right)^\beta} + L_\infty
+        = aN^{-\alpha} + b\left(\frac{6N}{C_{\text{compute}}}\right)^\beta + L_\infty.
+        \]
+
+        Differentiate with respect to $N$:
+        \[
+        \frac{dL}{dN}
+        =
+        -\alpha a N^{-\alpha-1}
+        +
+        \beta b\,6^\beta C_{\text{compute}}^{-\beta} N^{\beta-1}.
+        \]
+        Setting this equal to zero,
+        \[
+        \alpha a N^{-\alpha-1}
+        =
+        \beta b\,6^\beta C_{\text{compute}}^{-\beta} N^{\beta-1}.
+        \]
+        Rearranging,
+        \[
+        N^{\alpha+\beta}
+        \propto
+        C_{\text{compute}}^\beta.
+        \]
+        Therefore,
+        \[
+        N^*(C_{\text{compute}})
+        \propto
+        C_{\text{compute}}^{\beta/(\alpha+\beta)}.
+        \]
+
+        Since
+        \[
+        D = \frac{C_{\text{compute}}}{6N},
+        \]
+        we also get
+        \[
+        D^*(C_{\text{compute}})
+        \propto
+        C_{\text{compute}}^{1-\beta/(\alpha+\beta)}
+        =
+        C_{\text{compute}}^{\alpha/(\alpha+\beta)}.
+        \]
+
+        \item Using
+        \[
+        \hat\alpha = 1.119719,
+        \qquad
+        \hat\beta = 0.668627,
+        \]
+        we have
+        \[
+        \hat\alpha + \hat\beta = 1.788346.
+        \]
+        If compute doubles, then
+        \[
+        \frac{N_{\text{new}}}{N_{\text{old}}}
+        =
+        2^{\hat\beta/(\hat\alpha+\hat\beta)}
+        =
+        2^{0.668627/1.788346}
+        \approx 1.296,
+        \]
+        and
+        \[
+        \frac{D_{\text{new}}}{D_{\text{old}}}
+        =
+        2^{\hat\alpha/(\hat\alpha+\hat\beta)}
+        =
+        2^{1.119719/1.788346}
+        \approx 1.543.
+        \]
+
+        So if we double the compute budget, we should increase
+        \[
+        N \text{ by about } 1.30\times
+        \qquad\text{and}\qquad
+        D \text{ by about } 1.54\times.
+        \]
+
+        \item If $\alpha \gg \beta$, then model size matters much more than data. In that case, the compute-optimal strategy would place more of the extra compute into increasing $N$ rather than $D$.
+
+        If $\alpha \ll \beta$, then data matters much more than model size. In that case, the compute-optimal strategy would place more of the extra compute into increasing $D$ rather than $N$.
+    \end{enumerate}
+
+    \item[(c)]
+    \begin{enumerate}
+        \item Using only the fitted data scaling law from part (a), the predicted test loss at
+        \[
+        D=60000
+        \]
+        is
+        \[
+        \hat L(60000) = 0.268425.
+        \]
+        After actually training the $K=12$ model on the full dataset, the true test loss is
+        \[
+        L_{\text{true}}(60000)=0.257493.
+        \]
+        Therefore the absolute prediction error is
+        \[
+        |0.268425 - 0.257493| = 0.010932.
+        \]
+
+        This prediction is fairly close. One possible source of discrepancy is that in the fit we used the $D=50000$ result as an estimate of the irreducible loss $\hat L_\infty$, but this is not actually a true irreducible loss. It is only the best observed loss in the sweep, so it may still be above the true floor. In addition, optimization noise, finite-sample noise, random subset selection, and the fact that the power-law relationship is only approximate can all contribute to prediction error.
+
+        \item The $K=18$ model trained on the full dataset achieved a test cross-entropy of
+        \[
+        0.2195.
+        \]
+        For the $K=12$ architecture, the fitted data scaling law has the form
+        \[
+        L(D) \approx \hat L_\infty + \hat b D^{-\hat\beta}.
+        \]
+        Here, from the data sweep we used
+        \[
+        \hat L_\infty = 0.236778.
+        \]
+        To match the $K=18$ performance, we would need
+        \[
+        0.2195 = \hat L_\infty + \hat b D^{-\hat\beta}.
+        \]
+        But this is impossible, because
+        \[
+        0.2195 < 0.236778 = \hat L_\infty.
+        \]
+        Since the target loss lies below the fitted asymptotic floor for the $K=12$ model, there is no finite positive value of $D$ that solves this equation under the fitted scaling law.
+
+        Therefore, according to the fitted law, the $K=12$ architecture cannot match the $K=18$ model's performance by adding more data alone. This suggests that model capacity and data are not interchangeable indefinitely: once a smaller model hits its apparent performance floor, additional data cannot fully compensate for insufficient capacity.
+    \end{enumerate}
+\end{enumerate}
+\end{solution}
 
 \newpage
 
@@ -413,8 +1153,8 @@ Fashion-MNIST images are $28 \times 28$ with 1 channel. After the stem's max-poo
 % Name and Calibration
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\textbf{Name}:
+\textbf{Name}: Ibrahim Khaliliya
 
-\textbf{Collaborators and Resources}:
+\textbf{Collaborators and Resources}: Claude was used for LaTeX styling issues, especially with the figures.
 
 \end{document}
