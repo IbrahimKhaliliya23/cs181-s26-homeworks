@@ -1,6 +1,6 @@
-\documentclass[submit]{../harvardml}
-\usepackage{../common}
-
+\documentclass[submit]{harvardml}
+\usepackage{common}
+\usepackage{float}
 \assignment{Homework \#5}
 \duedate{April 19, 2026 at 11:59pm}
 
@@ -111,7 +111,159 @@ In the notebook, these correspond to the sections
 \end{problem}
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item \begin{enumerate}
+	        \item For anchor \(i\), define the score for every other embedding \(k \neq i\) as
+
+\[
+s_{ik} = \frac{z_i^\top z_k}{\tau}.
+\]
+
+This gives \(2N-1\) possible classes, since among the \(2N\) embeddings we exclude \(i\) itself.
+The correct class is the positive pair \(j\), while the remaining \(2N-2\) embeddings are negatives.
+
+Using softmax, the probability of choosing class \(j\) is
+
+\[
+p_i(j)
+=
+\frac{\exp(s_{ij})}
+{\sum_{\substack{k=1 \\ k \neq i}}^{2N} \exp(s_{ik})}
+=
+\frac{\exp\left(z_i^\top z_j/\tau\right)}
+{\sum_{\substack{k=1 \\ k \neq i}}^{2N} \exp\left(z_i^\top z_k/\tau\right)}.
+\]
+
+The cross-entropy loss for this \((2N-1)\)-way classification problem is
+
+\[
+\mathrm{CE}
+=
+-\log p_i(j).
+\]
+
+Substituting the softmax expression gives
+
+\[
+\mathrm{CE}
+=
+-\log
+\frac{\exp\left(z_i^\top z_j/\tau\right)}
+{\sum_{\substack{k=1 \\ k \neq i}}^{2N}
+\exp\left(z_i^\top z_k/\tau\right)}.
+\]
+
+This is exactly
+
+\[
+\ell(i,j)
+=
+-\log
+\frac{\exp\left(z_i^\top z_j/\tau\right)}
+{\sum_{\substack{k=1 \\ k \neq i}}^{2N}
+\exp\left(z_i^\top z_k/\tau\right)}.
+\]
+
+Therefore, the NT-Xent loss is exactly the cross-entropy loss of a \((2N-1)\)-class classification problem where the model must identify the positive partner \(j\) of anchor \(i\) among all other embeddings.
+\item For a negative sample \(k \neq j\), the softmax weight is
+
+\[
+w_k
+=
+\frac{\exp\left(z_i^\top z_k / \tau\right)}
+{\sum_{\substack{m=1 \\ m \neq i}}^{2N}
+\exp\left(z_i^\top z_m / \tau\right)}.
+\]
+
+As \(\tau \to 0^{+}\), the quantity \(\frac{z_i^\top z_k}{\tau}\) becomes very large for the sample with the
+largest similarity to \(z_i\), and much smaller for all others. That's why the softmax becomes nearly
+a hard maximum, meaning almost all probability mass is assigned to the most similar sample
+
+If the most similar sample is a hard negative, it receives nearly all the weight, while the rest receive
+almost zero weight. This creates very steep gradients and makes training unstable.
+
+As \(\tau \to \infty\), we have
+
+\[
+\frac{z_i^\top z_k}{\tau} \to 0
+\]
+
+for all \(k\), so
+
+\[
+\exp\left(z_i^\top z_k / \tau\right) \approx 1.
+\]
+
+Thus all samples receive nearly equal weight:
+
+\[
+w_k \approx \frac{1}{2N-1}.
+\]
+
+
+An intermediate temperature is preferred because it balances these two edge cases in the sense that it gives higher
+weight to informative hard negatives without making the optimization too unstable. This provides
+useful gradients while maintaining stable training.
+	    \end{enumerate}
+        \item \begin{enumerate}
+            \item Under collapse, every normalized representation is the same unit vector \(c\), so for all
+\(m \neq i\),
+
+\[
+z_i^\top z_m = 1.
+\]
+
+Hence
+
+\[
+\ell(i,j)
+=
+-\log
+\frac{\exp(1/\tau)}
+{\sum_{\substack{k=1\\k\neq i}}^{2N}\exp(1/\tau)}.
+\]
+
+There are \(2N-1\) terms in the denominator, all equal to \(\exp(1/\tau)\), so
+
+\[
+\ell(i,j)
+=
+-\log
+\frac{\exp(1/\tau)}
+{(2N-1)\exp(1/\tau)}
+=
+-\log\left(\frac{1}{2N-1}\right).
+\]
+
+Therefore,
+
+\[
+\boxed{\ell(i,j)=\log(2N-1).}
+\]
+            \item The encoder output \(h=f(x)\) is usually more useful downstream because it is the
+representation that is meant to capture the semantic content of the image. The projection head \(g\)
+is trained specifically to help optimize the contrastive objective, so \(z=g(f(x))\) may discard
+information that is useful for transfer but unnecessary for the pretraining loss. Thus \(h\) tends to
+be more of a general representation, while \(z\) is more specialized to SimCLR training.
+            \item If augmentations are too aggressive, two views of the same image may no longer preserve
+the same semantics . Then the model is forced to pull together representations that should not
+really match, which can hurt the learned features.
+
+If augmentations are too weak, the two views are nearly identical, so the task becomes too easy.
+The model can solve it using low-level cues instead of learning complex semantic features.
+
+An intermediate augmentation strength is preferred because it preserves the underlying identity of the
+image while still forcing the model to become invariant to nuisance changes.
+        \end{enumerate}
+\item   SimCLR Pre training Loss
+
+    \centering
+    \includegraphics[width=0.5\linewidth]{simCLRLoss.png}
+    \item SimCLR vs Supervised 
+    
+    \centering
+    \includegraphics[width=0.5\linewidth]{Comparison.png}
+		\end{enumerate}
 \end{solution}
 
 \newpage
@@ -160,7 +312,248 @@ The GAN notebook section is deliberately split into small cells so that the math
 \end{problem}
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item \begin{enumerate}
+	        \item For fixed \(G\), the objective is
+
+\[
+V(D,G)
+=
+\mathbb{E}_{x \sim p_{\mathrm{data}}}[\log D(x)]
++
+\mathbb{E}_{x \sim p_g}[\log(1-D(x))].
+\]
+
+Writing this as an integral,
+
+\[
+V(D,G)
+=
+\int p_{\mathrm{data}}(x)\log D(x)\,dx
++
+\int p_g(x)\log(1-D(x))\,dx.
+\]
+
+Since this is pointwise in \(x\), for each fixed \(x\) we maximize
+
+\[
+p_{\mathrm{data}}(x)\log D(x) + p_g(x)\log(1-D(x)).
+\]
+
+Let
+
+\[
+a = p_{\mathrm{data}}(x), \qquad b = p_g(x).
+\]
+
+Then we maximize
+
+\[
+a \log D(x) + b \log(1-D(x)).
+\]
+
+Differentiate :
+
+\[
+\frac{a}{D(x)} - \frac{b}{1-D(x)} = 0.
+\]
+
+So
+
+\[
+a(1-D(x)) = bD(x)
+\]
+
+\[
+a = (a+b)D(x).
+\]
+
+Hence
+
+\[
+\boxed{
+D^*(x)=\frac{p_{\mathrm{data}}(x)}{p_{\mathrm{data}}(x)+p_g(x)}
+}.
+\]
+            \item Substitute \(D^*(x)\) 
+
+\[
+V(D^*,G)
+=
+\int p_{\mathrm{data}}(x)\log \frac{p_{\mathrm{data}}(x)}{p_{\mathrm{data}}(x)+p_g(x)}\,dx
++
+\int p_g(x)\log \frac{p_g(x)}{p_{\mathrm{data}}(x)+p_g(x)}\,dx.
+\]
+
+Define
+
+\[
+m(x)=\frac{1}{2}\bigl(p_{\mathrm{data}}(x)+p_g(x)\bigr).
+\]
+
+Then
+
+\[
+p_{\mathrm{data}}(x)+p_g(x)=2m(x),
+\]
+
+so
+
+\[
+V(D^*,G)
+=
+\int p_{\mathrm{data}}(x)\log \frac{p_{\mathrm{data}}(x)}{2m(x)}\,dx
++
+\int p_g(x)\log \frac{p_g(x)}{2m(x)}\,dx.
+\]
+
+Split
+
+\[
+V(D^*,G)
+=
+\int p_{\mathrm{data}}(x)\log \frac{p_{\mathrm{data}}(x)}{m(x)}\,dx
++
+\int p_g(x)\log \frac{p_g(x)}{m(x)}\,dx
+-2\log 2.
+\]
+
+Thus
+
+\[
+V(D^*,G)
+=
+\mathrm{KL}(p_{\mathrm{data}} \,\|\, m)
++
+\mathrm{KL}(p_g \,\|\, m)
+-2\log 2.
+\]
+
+Using
+
+\[
+\mathrm{JS}(p_{\mathrm{data}} \,\|\, p_g)
+=
+\frac{1}{2}\mathrm{KL}(p_{\mathrm{data}} \,\|\, m)
++
+\frac{1}{2}\mathrm{KL}(p_g \,\|\, m),
+\]
+
+we get
+
+\[
+\boxed{
+V(D^*,G)
+=
+- \log 4
++
+2\,\mathrm{JS}(p_{\mathrm{data}} \,\|\, p_g)
+}.
+\]
+            \item This means that once the discriminator is optimal, training the generator is equivalent to minimizing
+
+\[
+\mathrm{JS}(p_{\mathrm{data}} \,\|\, p_g).
+\]
+
+So the generator is trying to make the model distribution \(p_g\) match the true data distribution \(p_{\mathrm{data}}\). The best case is when
+
+\[
+p_g = p_{\mathrm{data}},
+\]
+
+because then
+
+\[
+\mathrm{JS}(p_{\mathrm{data}} \,\|\, p_g)=0
+\]
+
+and
+
+\[
+V(D^*,G) = -\log 4.
+\]
+
+The generator is trying to produce samples so realistic that the discriminator cannot differentiate what is real from what is fake, in both cases 
+
+\[
+D^*(x)=\frac{1}{2}
+\]
+
+everywhere.
+	    \end{enumerate}
+        \item \begin{enumerate}
+            \item The discriminator is trained to maximize
+
+\[
+\mathcal{L}_D
+=
+\mathbb{E}_{x \sim p_{\mathrm{data}}}[\log D(x)]
++
+\mathbb{E}_{z \sim p_z}[\log(1-D(G(z)))].
+\]
+
+If we take it in minimization form we minimize
+
+\[
+J_D
+=
+-\mathcal{L}_D
+=
+-\mathbb{E}_{x \sim p_{\mathrm{data}}}[\log D(x)]
+-
+\mathbb{E}_{z \sim p_z}[\log(1-D(G(z)))].
+\]
+
+            \item In the original  formulation, the generator minimizes
+
+\[
+\mathcal{L}_G^{\mathrm{minimax}}
+=
+\mathbb{E}_{z \sim p_z}[\log(1-D(G(z)))].
+\]
+
+But we use generator loss
+
+\[
+\mathcal{L}_G
+=
+-\mathbb{E}_{z \sim p_z}[\log D(G(z))],
+\]
+
+since it gives stronger gradients when the discriminator is sure.
+            \item training alternates between the two updates:
+
+\[
+\text{(1) Update } D \text{ with } G \text{ fixed,}
+\]
+using one minibatch of real samples \(x \sim p_{\mathrm{data}}\) and one minibatch of fake samples
+\(G(z)\) with \(z \sim p_z\).
+
+Then
+
+\[
+\text{(2) Update } G \text{ with } D \text{ fixed,}
+\]
+by sampling latent vectors \(z \sim p_z\), generating fake samples \(G(z)\), and taking the gradient
+on the  loss.
+
+So each iteration is:
+
+\[
+\text{sample real data} \;\to\; \text{sample noise} \;\to\; \text{update } D \;\to\; \text{sample noise again} \;\to\; \text{update } G.
+\]
+
+The discriminator learns to distinguish real from fake, while the generator learns to make fake
+samples look real enough to "deceive" the discriminator.
+        \end{enumerate}
+    \item 
+    Full training run and evalutaion
+    
+    \centering
+    \includegraphics[width=0.25\linewidth]{clusters.png}
+	\end{enumerate}
+
 \end{solution}
 
 \newpage
@@ -183,7 +576,54 @@ Your job is to implement K-means and HAC on MNIST and test whether these relativ
 \end{problem}
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item 
+        Verified: objective never increases
+        
+	 
+	    \includegraphics[width=0.5\linewidth]{K-meansObjective.png}
+        
+        \item 
+
+        Mean Images from Raw Pixels
+        
+        \includegraphics[width=0.5\linewidth]{p2.2.png}
+
+        \item 
+        
+        Mean Images after Standardization
+        
+        \includegraphics[width=0.5\linewidth]{p2.3.png}
+
+        \item 
+
+        HAC Mean Images
+        
+        \includegraphics[width=0.5\linewidth]{p2.4.png}
+
+        \item 
+
+        HAC Mean Images
+        
+        \includegraphics[width=0.5\linewidth]{p2.4.png}
+
+        \item 
+
+        Cluster-Size Plots
+
+        \includegraphics[width=0.5\linewidth]{p2.5a.png}
+
+        \item 
+
+        \includegraphics[width=0.5\linewidth]{p2.5b.png}
+
+        \item 
+
+        \includegraphics[width=0.5\linewidth]{p2_confusion.png}
+
+         
+        
+		\end{enumerate}
 \end{solution}
 
 \newpage
@@ -229,7 +669,22 @@ Your job is to implement K-means and HAC on MNIST and test whether these relativ
 \end{problem}
 
 \begin{solution}
-	Your solution here.
+	\begin{enumerate}
+	    \item
+        The first 500 components capture nearly all the variance. The cumulative curve rises steeply through 50 percent, then flattens past k200.
+        Indicating MNIST digits occupy a low-dimensional subspace
+        \includegraphics[width=0.75\linewidth]{pca_eigenvalues.png}
+        \item 
+        K-means cluster centers are interpretable averages — each looks like a blurry but recognizable digit (0, 1, 3, 7, etc.) because K-means partitions the data and computes the mean within each partition. They represent "typical" instances of digit groups.
+
+Principal components look nothing like actual digits. They have both positive and negative values (light and dark contrast regions) and resemble oscillatory patterns or "eigenfaces"-style masks. This is because PCs are orthogonal directions of maximum variance, not cluster prototypes. They capture global modes of variation ( PC1 distinguishes digits with a central loop like 0 from those without; later PCs capture increasingly fine-grained stroke variations).
+
+        \includegraphics[width=0.75\linewidth]{pca_components.png}
+
+        \item he mean-only reconstruction error (~3.4M per point) is the largest since it uses a single global prototype for all images. K-means (K=10) reduces this to ~2.5M per point by assigning each image to one of 10 cluster centroids, capturing coarse digit-level structure. Top-10 PCA achieves the lowest error (~1.7M per point) despite also using 10 "dimensions," because it reconstructs each image as a unique linear combination of 10 continuous basis vectors rather than snapping to one of 10 fixed prototypes. Both methods exploit the same underlying low-dimensional structure in the data, but PCA's per-image continuous coefficients give it strictly more representational flexibility than K-means' discrete assignments, explaining why PCA's reconstruction error is lower.
+
+        \item Rotating the principal components by an orthogonal matrix $R$ does not change the reconstruction error because VR spans the same subspace as V, and the orthogonality of $ R$ preserves all norms ($R^T R = I$), so projections onto the subspace remain identical. However, it does change the interpretation of individual components: the original PCs are uniquely defined (up to sign) as successive directions of maximum variance, whereas the rotated components mix these directions, even though collectively they represent the same subspace equally well.
+	\end{enumerate}
 \end{solution}
 
 \end{document}
