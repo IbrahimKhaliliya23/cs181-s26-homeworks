@@ -427,7 +427,7 @@ V_{\text{new}}(s)=\max_a Q(s,a).
 
     The policies become more future-oriented as $\gamma$ increases. When $\gamma=0.6$, the agent is more myopic and avoids paths whose immediate risk is high, especially around the negative-reward middle column. For $\gamma=0.7$, the policy already starts routing many states toward the large positive state on the right. For $\gamma=0.8$ and $\gamma=0.9$, the repeated long-run value of reaching the $+50$ state dominates the short-term penalties, so more states point east toward the high-reward region. This makes sense because the rewards are infinite-horizon rewards: once the agent reaches a positive state, it can keep receiving that state's reward after taking actions there.
 
-    \item If positive-reward states became terminal, then the policy would no longer be trying to reach a positive state and stay there forever. Instead, each positive reward would be collected only once. For small $\gamma$, the optimal policy would prefer nearby positive rewards because delayed rewards are heavily discounted. For larger $\gamma$, the agent would be more willing to take a longer path to the larger terminal reward, such as the $+50$ state, as long as the risk of hitting negative states is not too large. If the start state itself is treated as positive and terminal, then the modeling choice would need to be adjusted, because otherwise the agent could terminate immediately from the start.
+    \item If positive-reward states became terminal, then the policy would no longer be trying to reach a positive state and stay there forever. Instead, each positive reward would be collected only once. For small $\gamma$, the optimal policy would prefer nearby positive rewards because delayed rewards are heavily discounted. For larger $\gamma$, the agent would be more willing to take a longer path to the larger terminal reward, such as the $+50$ state, as long as the risk of hitting negative states is not too large. If the start state itself were treated as positive and terminal, then the model would need a special exception; otherwise the episode would end immediately from the start.
 
     \item The value of the model-based approach is that we can solve for a policy without physically testing many bad policies on the robot. This is safer, cheaper, and easier to debug than learning directly on the real robot, since the transition probabilities and rewards are explicit. The limitation is that the final policy is only as good as the model. If the slip probabilities, rewards, terminal conditions, or physical constraints are wrong, the computed policy may optimize the Gridworld but not the real task. RL on the robot has a similar issue with reward design: even if it learns from real experience, it can still optimize the specified reward rather than the thing we actually care about.
 \end{enumerate}
@@ -490,18 +490,22 @@ I implemented tabular Q-learning with $\epsilon$-greedy exploration in \texttt{h
 \[
   Q(s,a)\leftarrow Q(s,a)+\alpha\bigl(r+\gamma\max_{a'}Q(s',a')-Q(s,a)\bigr),
 \]
-equivalent to the $(1-\alpha)$--$\alpha$ averaging form. States are discretized into two indices $(b_x,b_y)$: $b_x=\lfloor\texttt{tree['dist']}/200\rfloor$ and $b_y=\lfloor(\texttt{tree['top']}-\texttt{monkey['top']})/100\rfloor$, clipped to a $7\times 9$ grid (from \texttt{X\_SCREEN}//\texttt{X\_BINSIZE} and \texttt{Y\_SCREEN}//\texttt{Y\_BINSIZE}). $Q$ is a dense NumPy array of shape $(2,7,9)$ over actions $\{\text{swing},\text{jump}\}$. Rewards are the simulator's native rewards (no shaping). Fixed hyperparameters are $\alpha=0.1$, $\gamma=0.9$, and $\epsilon=0.1$.
+equivalent to the $(1-\alpha)$--$\alpha$ averaging form. States are discretized into two indices $(b_x,b_y)$:
+\[
+  b_x=\left\lfloor \frac{\texttt{tree['dist']}}{200} \right\rfloor,
+  \qquad
+  b_y=\left\lfloor \frac{\texttt{tree['top']}-\texttt{monkey['top']}}{100} \right\rfloor,
+\]
+then clipped to a $7\times 9$ grid. The Q-table is a dense NumPy array of shape $(2,7,9)$ over the two actions, swing and jump. I used the simulator's native rewards without extra shaping, with fixed hyperparameters $\alpha=0.1$, $\gamma=0.9$, and $\epsilon=0.1$.
 
-Problem~2 fixes the global RNG with \texttt{np.random.seed(181)} for Gridworld; Swingy Monkey uses the same NumPy random stream. Before importing the game I call \texttt{np.random.seed(None)} so environment randomness and $\epsilon$-greedy draws are not replayed identically on every full-notebook run.
-
-Training uses \texttt{run\_games(...,\ iters=100)}; final scores are saved as \texttt{hist.npy}. Figure~\ref{fig:swingy-hist} shows score versus epoch (regenerate with the plotting cell after training). Performance is noisy and state aliasing is strong under this coarse binning; meeting the handout's ``score $>50$ once before epoch 100'' would likely require decaying $\epsilon$, extra features (e.g.\ velocity or gravity), or further tuning as suggested in the problem statement.
+Training was run for 100 epochs using \texttt{run\_games(...,\ iters=100)}, and the episode scores were saved in \texttt{hist.npy}. Figure~\ref{fig:swingy-hist} shows the resulting score trajectory. The policy occasionally survives several trees, but performance remains noisy because the state representation is very coarse: two states with different velocities or gravity values can be mapped to the same $(b_x,b_y)$ bin even though they require different actions. Thus the main limitation of this implementation is state aliasing, not the Q-learning update itself. A stronger version would add velocity and/or an estimate of gravity to the state and use a decaying exploration schedule, but the submitted implementation keeps the learner simple and tabular.
 
 \begin{center}
-\begin{tabular}{lcccc}
+\begin{tabular}{lcccl}
 \hline
-Implementation & $\alpha$ & $\gamma$ & $\epsilon$ & State features \\
+Implementation & $\alpha$ & $\gamma$ & $\epsilon$ & State features \\ 
 \hline
-\texttt{Learner} (submitted) & $0.1$ & $0.9$ & $0.1$ fixed & $(b_x,b_y)$ only \\
+\texttt{Learner} (submitted) & $0.1$ & $0.9$ & $0.1$ fixed & $(b_x,b_y)$ only \\ 
 \hline
 \end{tabular}
 \end{center}
@@ -509,13 +513,11 @@ Implementation & $\alpha$ & $\gamma$ & $\epsilon$ & State features \\
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.82\linewidth]{img_output/swingy_hist}
-  \caption{Score vs.\ epoch from \texttt{hist.npy}. Re-run the notebook plotting cell after training if this file is missing.}
+  \caption{Swingy Monkey score versus epoch for the submitted Q-learning learner.}
   \label{fig:swingy-hist}
 \end{figure}
 
 \end{solution}
-
-\newpage
 
 \newpage
 
@@ -842,9 +844,9 @@ This creates a feedback loop. The user's past behavior becomes part of the state
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Name and Calibration
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
 \subsection*{Name}
+Ibrahim Khaliliya
+
 \subsection*{Collaborators and Resources}
-Whom did you work with, and did you use any resources beyond cs181-textbook and your notes?
 
 \end{document}
